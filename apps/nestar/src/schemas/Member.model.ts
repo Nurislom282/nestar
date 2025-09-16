@@ -111,7 +111,7 @@ const MemberSchema = new Schema(
 			default: 0,
 		},
 
-		DelatedAt: {
+		delatedAt: {
 			type: Date,
 		},
 	},
