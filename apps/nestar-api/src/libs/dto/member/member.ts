@@ -1,4 +1,4 @@
-import { MemberAuthType, MemberStatus, MemberType } from './../../enums/memeber.enum';
+import { MemberAuthType, MemberStatus, MemberType } from '../../enums/memeber.enum';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { ObjectId } from 'mongoose';
 
