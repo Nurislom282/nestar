@@ -70,7 +70,7 @@ export class Member {
 	memberBlocks: number;
 
 	@Field(() => Date, { nullable: true })
-	delatedAt?: Date;
+	deletedAt?: Date;
 
 	@Field(() => Date)
 	createdAt: Date;
@@ -79,5 +79,5 @@ export class Member {
 	updatedAt: Date;
 
 	@Field(() => String, { nullable: true })
-	acessToken?: string;
+	accessToken?: string;
 }
