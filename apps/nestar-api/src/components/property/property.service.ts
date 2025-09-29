@@ -12,6 +12,7 @@ import { ViewService } from '../view/view.service';
 import { PropertyUpdate } from '../../libs/dto/property/property.update';
 import * as moment from "moment"
 import { lookupMember, shapeIntoMongoObjectId } from '../../libs/config';
+import { AgentPropertiesInquiry } from '../../libs/dto/member/member.input';
 
 @Injectable()
 export class PropertyService {
@@ -153,5 +154,34 @@ export class PropertyService {
                 return { [ele]: true }
             })
         }
+    }
+
+    public async getAgentProperties(memberId: ObjectId, input: AgentPropertiesInquiry): Promise<Properties> {
+        const { propertyStatus } = input.search
+        if (propertyStatus === PropertyStatus.DELETE) throw new BadRequestException(Message.NOT_ALLOWED_REQUEST)
+
+        const match: T = {
+            memberId: memberId,
+            propertyStatus: propertyStatus ?? { $ne: PropertyStatus.DELETE }
+        }
+        const sort: T = { [input?.sort ?? 'createdAt']: input.direction ?? Direction.DESC }
+
+        const result = await this.propertyModel.aggregate([
+            { $match: match },
+            { $sort: sort },
+            {
+                $facet: {
+                    list: [{ $skip: (input.page - 1) * input.limit },
+                    { $limit: input.limit },
+                        lookupMember,
+                    { $unwind: '$memberData' }
+                    ],
+                    metaCounter: [{ $count: 'total' }]
+                }
+            }
+        ]).exec()
+        if (!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND)
+
+        return result[0]
     }
 }

@@ -11,6 +11,7 @@ import { MemberType } from '../../libs/enums/memeber.enum';
 import { WithoutGuard } from '../auth/guards/without.guard';
 import { shapeIntoMongoObjectId } from '../../libs/config';
 import { PropertyUpdate } from '../../libs/dto/property/property.update';
+import { AgentPropertiesInquiry } from '../../libs/dto/member/member.input';
 
 @Resolver()
 export class PropertyResolver {
@@ -52,5 +53,16 @@ export class PropertyResolver {
    public async getProperties(@Args('input') input: PropertiesInquiry, @AuthMember('_id') memberId: ObjectId): Promise<Properties> {
       console.log("Query: getProperties")
       return await this.propertyService.getProperties(memberId, input)
+   }
+
+   @Roles(MemberType.AGENT)
+   @UseGuards(RolesGuard)
+   @Query((returns) => Properties)
+   public async getAgentProperties(
+      @Args('input') input: AgentPropertiesInquiry,
+      @AuthMember('_id') memberId: ObjectId
+   ): Promise<Properties> {
+      console.log("Query: getAgentProperties")
+      return await this.propertyService.getAgentProperties(memberId, input)
    }
 }
