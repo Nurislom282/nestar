@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, ObjectId } from 'mongoose';
 import { Properties, Property } from '../../libs/dto/property/property';
 import { MemberService } from '../member/member.service';
-import { PropertiesInquiry, PropertyInput } from '../../libs/dto/property/property.input';
+import { AllPropertiesInquiry, PropertiesInquiry, PropertyInput } from '../../libs/dto/property/property.input';
 import { Direction, Message } from '../../libs/enums/common.enum';
 import { StatisticModifier, T } from '../../libs/types/common';
 import { PropertyStatus } from '../../libs/enums/property.enum';
@@ -13,6 +13,7 @@ import { PropertyUpdate } from '../../libs/dto/property/property.update';
 import * as moment from "moment"
 import { lookupMember, shapeIntoMongoObjectId } from '../../libs/config';
 import { AgentPropertiesInquiry } from '../../libs/dto/member/member.input';
+import { skip } from 'node:test';
 
 @Injectable()
 export class PropertyService {
@@ -57,7 +58,7 @@ export class PropertyService {
             //meLike
         }
 
-        targetProperty.memberData =  await this.memberService.getMember(null, targetProperty.memberId);
+        targetProperty.memberData = await this.memberService.getMember(null, targetProperty.memberId);
         return targetProperty;
     }
 
@@ -180,6 +181,37 @@ export class PropertyService {
                 }
             }
         ]).exec()
+        if (!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND)
+
+        return result[0]
+    }
+
+    public async getAllPropertiesByAdmin(input: AllPropertiesInquiry): Promise<Properties> {
+        const { propertyStatus, propertyLocationList } = input.search
+        const match: T = {}
+        const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC }
+
+        if (propertyStatus) match.propertyStatus = propertyStatus
+        if (propertyLocationList) match.propertyLocation = { $in: propertyLocationList }
+
+        const result = await this.propertyModel.
+            aggregate([
+                { $match: match },
+                { $sort: sort },
+                {
+                    $facet: {
+                        list: [
+                            { $skip: (input.page - 1) * input.limit },
+                            { $limit: input.limit },
+                            lookupMember,
+                            { $unwind: '$memberData' }
+                        ],
+                        metaCounter: [{ $count: 'total' }],
+                    },
+                },
+            ])
+            .exec();
+
         if (!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND)
 
         return result[0]
