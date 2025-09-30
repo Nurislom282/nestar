@@ -49,6 +49,10 @@ class AISearch {
 	@IsOptional()
 	@Field(() => PropertyStatus, { nullable: true })
 	propertyStatus?: PropertyStatus
+
+	@IsOptional()
+	@Field(() => String, { nullable: true })
+	text?: string
 }
 @InputType()
 export class AgentsInquiry {
