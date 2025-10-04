@@ -20,7 +20,7 @@ export class BoardArticleResolver {
     @UseGuards(AuthGuard)
     @Mutation((returns) => BoardArticle)
     public async createBoardArticle(
-        @Args('input') input: BoardArticle,
+        @Args('input') input: BoardArticleInput,
         @AuthMember('_id') memberId: ObjectId,
     ): Promise<BoardArticle> {
         console.log("Mutation: createBoardArticle");
