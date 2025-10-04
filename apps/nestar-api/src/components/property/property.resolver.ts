@@ -70,7 +70,7 @@ export class PropertyResolver {
    @UseGuards(AuthGuard)
    @Mutation(() => Property)
    public async likeTargetProperty(
-      @Args("memberId") input: string,
+      @Args("propertyId") input: string,
       @AuthMember('_id') memberId: ObjectId): Promise<Property> {
       console.log("Mutataion: likeTargetProperty")
       const likeRefId = shapeIntoMongoObjectId(input)
