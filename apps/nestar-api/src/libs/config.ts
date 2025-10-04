@@ -14,13 +14,14 @@ export const availablePropertySorts = [
 	'propertyPrice'
 ] 
 
-export const availableCommentSorts = []
 
 export const availableBoardArticleSorts = ['createdAt', 'updatedAt', 'articleLikes', 'articleViews']
+export const availableCommentSorts = ['createdAt', 'updatedAt']
 
 /* IMAGE CONFIGURATION (config.js) */
 import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
+import { from } from 'rxjs';
 
 export const validMimeTypes = ['image/png', 'image/jpg', 'image/jpeg'];
 export const getSerialForImage = (filename: string) => {
@@ -39,4 +40,22 @@ export const lookupMember = {
 		foreignField: '_id',
 		as: "memberData",
 	}
+}
+
+export const lookupFollowingData = {
+	$lookup: {
+		from: 'members',
+		localField: 'followingId',
+		foreignField: '_id',
+		as: 'followingData'
+	},
+};
+
+export const lookupFollowerData = {
+	$lookup: {
+		from: 'members',
+		localField: 'followerId',
+		foreignField: '_id',
+		as: 'followerData'
+	},
 }
