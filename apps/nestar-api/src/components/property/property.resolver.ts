@@ -5,13 +5,13 @@ import { AgentPropertiesInquiry, AllPropertiesInquiry, OrdinaryInquiry, Properti
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UseGuards } from '@nestjs/common';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { MemberType } from '../../libs/enums/member.enum';
 import { ObjectId } from 'mongoose';
 import { AuthMember } from '../auth/decorators/authMember.decorator';
 import { WithoutGuard } from '../auth/guards/without.guard';
 import { shapeIntoMongoObjectId } from '../../libs/config';
 import { PropertyUpdate } from '../../libs/dto/property/property.update';
 import { AuthGuard } from '../auth/guards/auth.guard';
+import { MemberType } from '../../libs/enums/memeber.enum';
 
 
 @Resolver()

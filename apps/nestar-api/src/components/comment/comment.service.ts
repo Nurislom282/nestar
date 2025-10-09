@@ -33,7 +33,7 @@ export class CommentService {
 
         switch (input.commentGroup) {
             case CommentGroup.PROPERTY:
-                await this.propertyService.propertyStatusEditor({
+                await this.propertyService.propertyStatsEditor({
                     _id: input.commentRefId,
                     targetKey: 'propertyComments',
                     modifier: 1,
