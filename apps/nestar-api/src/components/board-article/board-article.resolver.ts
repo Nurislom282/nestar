@@ -8,7 +8,7 @@ import { ObjectId } from 'mongoose';
 import { WithoutGuard } from '../auth/guards/without.guard';
 import { shapeIntoMongoObjectId } from '../../libs/config';
 import { BoardArticleUpdate } from '../../libs/dto/board-article/board-article.update';
-import { BoardArticleInput, BoardArticlesInquiry } from '../../libs/dto/board-article/board-article.input';
+import { AllBoardArticlesInquiry, BoardArticleInput, BoardArticlesInquiry } from '../../libs/dto/board-article/board-article.input';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { MemberType } from '../../libs/enums/memeber.enum';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -31,11 +31,11 @@ export class BoardArticleResolver {
     @Query((returns) => BoardArticle)
     public async getBoardArticle(
         @Args('articleId') input: string,
-        @AuthMember('_id') memberId: ObjectId
-    ): Promise<BoardArticle> {
-        console.log("Query: getBoardArticle")
-        const articleId = shapeIntoMongoObjectId(input)
-        return await this.boardArticleService.getBoardArticle(memberId, articleId)
+      @AuthMember('_id') memberId: ObjectId,
+  ): Promise<BoardArticle> {
+        console.log('Query: getProperty');
+        const articleId = shapeIntoMongoObjectId(input);
+        return await this.boardArticleService.getBoardArticle(memberId, articleId);
     }
 
     @UseGuards(AuthGuard)
@@ -75,7 +75,7 @@ export class BoardArticleResolver {
     @UseGuards(RolesGuard)
     @Query((returns) => BoardArticles)
     public async getAllBoardArticlesByAdmin(
-        @Args('input') input: BoardArticlesInquiry,
+        @Args('input') input: AllBoardArticlesInquiry,
         @AuthMember('_id') memberId: ObjectId,
     ): Promise<BoardArticles> {
         console.log("Query: getAllBoardArticlesByAdmin")

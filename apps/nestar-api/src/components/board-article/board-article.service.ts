@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, ObjectId } from 'mongoose';
 import { BoardArticle, BoardArticles } from '../../libs/dto/board-article/board-article';
 import { AllBoardArticlesInquiry, BoardArticleInput, BoardArticlesInquiry } from '../../libs/dto/board-article/board-article.input';
-import { lookupMember, shapeIntoMongoObjectId } from '../../libs/config';
+import { lookupAuthMemberLiked, lookupMember, shapeIntoMongoObjectId } from '../../libs/config';
 import { Direction, Message } from '../../libs/enums/common.enum';
 import { MemberService } from '../member/member.service';
 import { ViewService } from '../view/view.service';
@@ -30,7 +30,7 @@ export class BoardArticleService {
             const result = await this.boardArticleModel.create(input)
             await this.memberService.memberStatsEditor({
                 _id: memberId,
-                targetKey: "memberArticles",
+                targetKey: "$memberArticles",
                 modifier: 1
             });
 
@@ -42,37 +42,30 @@ export class BoardArticleService {
     }
 
     public async getBoardArticle(memberId: ObjectId, articleId: ObjectId): Promise<BoardArticle> {
-
-
         const search: T = {
             _id: articleId,
-            propertyStatus: BoardArticleStatus.ACTIVE
+            articleStatus: BoardArticleStatus.ACTIVE,
         };
 
-        const targetBoardArticle: BoardArticle = await this.boardArticleModel.findOne(search).lean().exec()
-        if (!targetBoardArticle) throw new InternalServerErrorException(Message.NO_DATA_FOUND)
+        const targetBoardArticle: BoardArticle | null = await this.boardArticleModel.findOne(search).lean().exec();
+        // BoardArticleni modify qilish imkoniyatiga ega bo'lish uchun leanni ishlatayapmiz
+        if (!targetBoardArticle) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
         if (memberId) {
-            const viewInput = { memberId: memberId, viewRefId: articleId, viewGroup: ViewGroup.ARTICLE }
-            const newView = await this.viewService.recordView(viewInput)
+            const viewInput = { memberId: memberId, viewRefId: articleId, viewGroup: ViewGroup.ARTICLE }; // men , nimani ,qayerdan
+            const newView = await this.viewService.recordView(viewInput);
             if (newView) {
                 await this.boardArticleStatsEditor({ _id: articleId, targetKey: 'articleViews', modifier: 1 });
-                targetBoardArticle.articleViews++
+                targetBoardArticle.articleViews++;
             }
-
-
-            //meLike
-            const likeInput = { memberId: memberId, likeRefId: articleId, likeGroup: LikeGroup.ARTICLE }
-            targetBoardArticle.meLiked = await this.likeService.checkLikeExistence(likeInput)
-
+            // meLiked
+            const likeInput = { memberId: memberId, likeRefId: articleId, likeGroup: LikeGroup.ARTICLE };
+            targetBoardArticle.meLiked = await this.likeService.checkLikeExistence(likeInput);
         }
 
         targetBoardArticle.memberData = await this.memberService.getMember(null, targetBoardArticle.memberId);
         return targetBoardArticle;
-
-
     }
-
     public async updateBoardArticle(memberId: ObjectId, input: BoardArticleUpdate): Promise<BoardArticle> {
         const { _id, articleStatus } = input
 
@@ -106,9 +99,9 @@ export class BoardArticleService {
             $facet: {
                 list: [{ $skip: (input.page - 1) * input.limit },
                 { $limit: input.limit },
-                    //meLiked
+                    lookupAuthMemberLiked(memberId),
                     lookupMember,
-                { $unwind: "memberData" },
+                    { $unwind: "$memberData" },
                 ],
                 metaCounter: [{ $count: "total" }],
             }
@@ -119,21 +112,26 @@ export class BoardArticleService {
     }
 
     public async likeTargetBoardArticle(memberId: ObjectId, likeRefId: ObjectId): Promise<BoardArticle> {
-        const target: BoardArticle = await this.boardArticleModel.findOne({ _id: likeRefId, memberStatus: BoardArticleStatus.ACTIVE }).exec()
-        if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND)
+        const target: BoardArticle | null = await this.boardArticleModel
+            .findOne({ _id: likeRefId, articleStatus: BoardArticleStatus.ACTIVE })
+            .exec();
+        if (!target) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
         const input: LikeInput = {
             memberId: memberId,
             likeRefId: likeRefId,
-            likeGroup: LikeGroup.ARTICLE
+            likeGroup: LikeGroup.ARTICLE,
         };
-
-        //Like Toggle -1 +1 via Like Module
-        const modifier: number = await this.likeService.toggleLike(input)
-        const result = await this.boardArticleStatsEditor({ _id: likeRefId, targetKey: "articleLikes", modifier: modifier })
+        //LIKE TOGGLE
+        const modifier: number = await this.likeService.toggleLike(input);
+        const result = await this.boardArticleStatsEditor({
+            _id: likeRefId,
+            targetKey: 'articleLikes',
+            modifier: modifier,
+        });
 
         if (!result) throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
-        return result
+        return result;
     }
 
     public async getAllBoardArticlesByAdmin(input: AllBoardArticlesInquiry): Promise<BoardArticles> {
@@ -152,7 +150,7 @@ export class BoardArticleService {
                     list: [{ $skip: (input.page - 1) * input.limit },
                     { $limit: input.limit },
                         lookupMember,
-                    { $unwind: "memberData" },
+                        { $unwind: "$memberData" },
                     ],
                     metaCounter: [{ $count: "total" }],
                 }
