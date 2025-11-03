@@ -41,4 +41,5 @@ export class MemberUpdate {
     @Field(() => String, { nullable: true })
     memberImage?: string;
 
+    deletedAt?: Date;
 }
